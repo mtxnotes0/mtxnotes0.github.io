@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MatrixNotes - One-page stock report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@560;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #010403;
+      --panel: rgba(4, 16, 10, 0.82);
+      --green: #3dff78;
+      --green-2: #b8ffd0;
+      --dim: #6fbf8c;
+      --muted: #3f7a56;
+      --line: rgba(61, 255, 120, 0.22);
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(61, 255, 120, 0.08), transparent 55%),
+        var(--bg);
+      color: var(--green-2);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    body::after {
+      content: "01001101 01100001 01110100 01110010 01101001 01111000  MATRIXNOTES  01010010 01100101 01110000 01101111 01110010 01110100  01 10 11 00  ETH  WALLET";
+      position: fixed; inset: 0; z-index: 0; padding: 28px;
+      color: rgba(61, 255, 120, 0.12); font-size: 13px; line-height: 1.7;
+      letter-spacing: 0.18em; word-break: break-all; pointer-events: none; user-select: none;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    .wrap { width: min(1080px, calc(100% - 40px)); margin: 0 auto; position: relative; z-index: 1; }
+    .gate { position: relative; z-index: 2; min-height: 100vh; display: grid; place-items: center; padding: 28px; }
+    .gate-card, .card, .report, .legal {
+      background: var(--panel); border: 1px solid var(--line); padding: 22px; position: relative;
+    }
+    .gate-card { width: min(560px, 100%); padding: 32px; }
+    .app { display: none; }
+    .app.on { display: block; }
+    nav {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(1, 4, 3, 0.78);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-size: 13px; color: var(--green); }
+    .mark { width: 28px; height: 28px; border: 1px solid var(--green); display: grid; place-items: center; box-shadow: 0 0 16px rgba(61, 255, 120, 0.25); }
+    .nav-links { display: flex; gap: 22px; color: var(--dim); font-size: 13px; }
+    .wallet-chip { color: var(--green); border: 1px solid var(--line); padding: 8px 10px; font-size: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--green); cursor: pointer; padding: 12px 16px;
+      background: var(--green); color: #021208; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .btn:hover { background: #8dffb4; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.ghost { background: transparent; color: var(--green); }
+    .btn.block { width: 100%; }
+    .btn.small { padding: 8px 12px; font-size: 12px; }
+    header.hero { min-height: 78vh; display: grid; align-items: end; }
+    .hero-inner { padding: 96px 0 64px; }
+    .kicker, .prompt { color: var(--green); letter-spacing: 0.16em; text-transform: uppercase; font-size: 12px; }
+    h1, h2, h3 { font-family: Syne, sans-serif; letter-spacing: -0.04em; margin: 0; font-weight: 750; }
+    h1 { font-size: clamp(48px, 8vw, 92px); line-height: 0.92; max-width: 11ch; margin: 14px 0 16px; color: #eaffe9; }
+    h2 { font-size: clamp(32px, 5vw, 56px); color: #eaffe9; }
+    .lede, .sub, .card p, .report p { color: var(--dim); }
+    .lede { max-width: 640px; }
+    .hero-actions, .row-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .stats, .grid-3, .report-grid { display: grid; gap: 14px; }
+    .stats, .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .report-grid { grid-template-columns: 1fr 1fr; }
+    .stats { margin-top: 42px; max-width: 720px; }
+    .stat { border-top: 1px solid var(--line); padding-top: 12px; }
+    .stat b { display: block; font-family: Syne, sans-serif; font-size: 24px; color: var(--green); }
+    .stat span, .fine, .eth-quote { color: var(--muted); font-size: 13px; }
+    section { padding: 84px 0; }
+    .section-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
+    .card h3 { font-size: 26px; margin: 8px 0; color: var(--green); }
+    .amt { font-family: Syne, sans-serif; font-size: 60px; color: var(--green); line-height: 1; margin: 8px 0; }
+    .prices { display: grid; grid-template-columns: minmax(280px, 520px); }
+    .price ul { color: var(--dim); }
+    textarea, input { width: 100%; border: 1px solid var(--line); background: #010806; color: var(--green-2); padding: 12px; }
+    textarea { min-height: 140px; resize: vertical; }
+    .note-out { white-space: pre-wrap; border: 1px solid var(--line); padding: 16px; min-height: 80px; color: var(--green-2); }
+    .desk { display: none; margin-top: 22px; }
+    .desk.on { display: block; }
+    footer { border-top: 1px solid var(--line); padding: 32px 0 60px; color: var(--muted); font-size: 12px; }
+    .status { min-height: 22px; color: var(--dim); font-size: 13px; margin-top: 8px; }
+    .status.ok { color: var(--green); }
+    .status.bad { color: var(--danger); }
+    .toast {
+      position: fixed; bottom: 18px; right: 18px; z-index: 40; display: none;
+      background: #021208; color: var(--green-2); border: 1px solid var(--green); padding: 14px; max-width: 320px;
+    }
+    @media (max-width: 860px) {
+      .nav-links { display: none; }
+      .stats, .grid-3, .report-grid { grid-template-columns: 1fr; }
+      .section-head { flex-direction: column; align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <div class="kicker">MatrixNotes</div>
+      <h2 style="margin: 12px 0;">Connect a wallet to enter.</h2>
+      <p class="lede">No email. No account. The page opens after MetaMask connects. Payment, your encryption key, and the note all stay on Ethereum.</p>
+      <div class="hero-actions">
+        <button class="btn" id="connect-btn" type="button" onclick="connectWallet()">Connect wallet</button>
+      </div>
+      <p class="status" id="gate-status"></p>
+    </div>
+  </div>
+
+  <div class="app" id="app">
+    <nav>
+      <div class="wrap nav-inner">
+        <a class="brand" href="#top"><span class="mark">M</span> MatrixNotes</a>
+        <div class="nav-links">
+          <a href="#flow">Flow</a>
+          <a href="#sample">Sample</a>
+          <a href="#plans">Buy</a>
+          <a href="#note">Your note</a>
+        </div>
+        <span class="wallet-chip" id="wallet-chip">—</span>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="wrap hero-inner">
+        <div class="kicker">One stock · One page · Wallet only</div>
+        <h1>Read the name.</h1>
+        <p class="lede">Pay once in ETH. The report is encrypted to the public key MetaMask gives this wallet, then written on-chain. The same wallet cannot buy another note until the contract wait has elapsed.</p>
+        <div class="stats">
+          <div class="stat"><b>01</b><span>Connect, then the page opens</span></div>
+          <div class="stat"><b>Key</b><span>Encryption key, not an email</span></div>
+          <div class="stat"><b>Wait</b><span>newNoteDuration() between buys</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section id="flow">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>How the note moves.</h2>
+          <p class="sub">Nothing is stored on a server. The chain is the ledger.</p>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <div class="prompt">01</div>
+            <h3>Connect</h3>
+            <p>MetaMask injects the provider. The site reads the account and asks for the encryption public key only at payment.</p>
+          </article>
+          <article class="card">
+            <div class="prompt">02</div>
+            <h3>Pay the contract</h3>
+            <p>buy() sends the ETH and stores that key. A second buy reverts until paidAt plus newNoteDuration().</p>
+          </article>
+          <article class="card">
+            <div class="prompt">03</div>
+            <h3>Deliver, then decrypt</h3>
+            <p>Only the author encrypts the page and calls deliver(). The buyer calls eth_decrypt.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="sample" style="padding-top: 0;">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Sample printout</h2>
+          <p class="sub">Fictional issuer. The shape of the page, not the paid file.</p>
+        </div>
+        <article class="report">
+          <div class="prompt">illustration · one page</div>
+          <h3>ACME</h3>
+          <p>Aftermarket parts, not a new-build story. Demand looks steadier than the multiple implies, but the page only holds if backlog converts without a freight spike.</p>
+          <div class="report-grid">
+            <div><strong style="color: var(--green);">Potential</strong><p>Service revenue is recurring. A scenario, not a promised return.</p></div>
+            <div><strong style="color: var(--green);">Risks</strong><p>Freight rates, a thin quarter, customer concentration.</p></div>
+          </div>
+          <p class="fine">The real note is not in this page. It is ciphertext on the contract after the author delivers it.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="plans">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Unlock the page.</h2>
+          <p class="sub">Anonymous. The buyer identity is the wallet address.</p>
+        </div>
+        <div class="prices">
+          <article class="card">
+            <div class="prompt">one time · eth</div>
+            <h3>Field report</h3>
+            <div class="amt" id="price-label">—</div>
+            <div class="eth-quote" id="note-quote">Connect a wallet. Price and wait come from the contract.</div>
+            <div class="eth-quote" id="cooldown">—</div>
+            <ul>
+              <li>One page on one stock</li>
+              <li>Encrypted to this wallet</li>
+              <li>Next note only after the wait</li>
+            </ul>
+            <button class="btn block" id="pay-btn" type="button" onclick="payForNote()">Pay and register key</button>
+            <p class="status" id="pay-status"></p>
+          </article>
+        </div>
+        <div class="desk on" id="note" style="margin-top: 22px;">
+          <article class="card">
+            <div class="prompt">your wallet</div>
+            <h3>Note</h3>
+            <p id="note-state">No payment from this wallet yet.</p>
+            <div class="note-out" id="note-out">Encrypted text appears here after delivery. Decrypt to read it.</div>
+            <div class="row-actions">
+              <button class="btn ghost" type="button" onclick="refreshPurchase()">Check chain</button>
+              <button class="btn" type="button" onclick="decryptNote()">Decrypt with wallet</button>
+            </div>
+          </article>
+        </div>
+        <div class="desk" id="author">
+          <article class="card">
+            <div class="prompt">author only</div>
+            <h3>Deliver a note</h3>
+            <p>Shown only when the connected wallet is the contract author. setPrice, setNewNoteDuration, pause, unpause, deliver, and withdraw revert for every other address.</p>
+            <input id="new-price" placeholder="New price in ETH, for example 0.01" aria-label="New price in ETH" />
+            <input id="new-duration" placeholder="Days between notes, for example 7" aria-label="Days between notes" style="margin-top: 10px;" />
+            <div class="row-actions">
+              <button class="btn small" type="button" onclick="updatePrice()">Set price</button>
+              <button class="btn small" type="button" onclick="updateDuration()">Set wait</button>
+              <button class="btn ghost small" type="button" onclick="setPaused(true)">Pause</button>
+              <button class="btn ghost small" type="button" onclick="setPaused(false)">Unpause</button>
+            </div>
+            <div class="row-actions">
+              <button class="btn ghost small" type="button" onclick="loadBuyers()">Load paid wallets</button>
+            </div>
+            <p class="fine" id="buyer-list">No buyers loaded.</p>
+            <input id="buyer-address" placeholder="Buyer address" aria-label="Buyer address" />
+            <textarea id="plain-note" placeholder="One-page report. Business, potential, risks, what would change the view." style="margin-top: 10px;"></textarea>
+            <div class="row-actions">
+              <button class="btn" type="button" onclick="deliverNote()">Encrypt and deliver</button>
+            </div>
+            <p class="status" id="author-status"></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <footer id="legal">
+      <div class="wrap">
+        <div class="legal">
+          <strong style="color: var(--green);">Not investment advice.</strong>
+          MatrixNotes sells a one-page report on a single stock. Nothing here is a recommendation to buy, sell, or hold a security. Paying in ETH does not create an advisory relationship. eth_getEncryptionPublicKey and eth_decrypt are deprecated MetaMask methods and may be removed. Ciphertext on a public chain is visible to everyone; only the matching wallet should be able to open it.
+        </div>
+        <p>MatrixNotes · wallet in, ciphertext out · contract address in CONFIG.</p>
+      </div>
+    </footer>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js"></script>
+  <script>
+    const CONFIG = {
+      contractAddress: "0x1075f75E648Ca0B2a35410917CcCdCB604578CA2",
+      chainId: 1
+    };
+    const ABI = [
+      "function author() view returns (address)",
+      "function currentPrice() view returns (uint256)",
+      "function newNoteDuration() view returns (uint256)",
+      "function paused() view returns (bool)",
+      "function setPrice(uint256 newPriceWei)",
+      "function setNewNoteDuration(uint256 durationSeconds)",
+      "function pause()",
+      "function unpause()",
+      "function proposeAuthor(address nextAuthor)",
+      "function acceptAuthor()",
+      "function buy(string encryptionPubKey) payable",
+      "function deliver(address buyer, string ciphertext)",
+      "function getPurchase(address buyer) view returns (bool paid, string encryptionPubKey, string ciphertext, bool delivered, uint256 paidAt)",
+      "function buyerCount() view returns (uint256)",
+      "function buyerAt(uint256 index) view returns (address)",
+      "function withdraw()"
+    ];
+    const session = { address: null, ciphertext: "" };
+
+    function toast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.style.display = "block";
+      setTimeout(() => { el.style.display = "none"; }, 4200);
+    }
+    function setStatus(id, message, kind) {
+      const el = document.getElementById(id);
+      el.textContent = message;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+    function shortAddr(value) {
+      return value.slice(0, 6) + "…" + value.slice(-4);
+    }
+    function contractReady() {
+      return ethers.isAddress(CONFIG.contractAddress);
+    }
+    function provider() {
+      if (!window.ethereum) throw new Error("MetaMask is not installed.");
+      return new ethers.BrowserProvider(window.ethereum);
+    }
+    async function ensureChain() {
+      const net = await provider().getNetwork();
+      if (net.chainId !== BigInt(CONFIG.chainId)) {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x" + CONFIG.chainId.toString(16) }]
+        });
+      }
+    }
+    async function connectWallet() {
+      const button = document.getElementById("connect-btn");
+      button.disabled = true;
+      try {
+        setStatus("gate-status", "Waiting for MetaMask…");
+        const eth = provider();
+        await eth.send("eth_requestAccounts", []);
+        await ensureChain();
+        const signer = await eth.getSigner();
+        session.address = await signer.getAddress();
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("app").classList.add("on");
+        document.getElementById("wallet-chip").textContent = shortAddr(session.address);
+        toast("Wallet connected.");
+        await loadSale();
+        await refreshPurchase();
+        await showAuthorIfNeeded();
+      } catch (error) {
+        setStatus("gate-status", error && error.message ? error.message : "Connection rejected.", "bad");
+        button.disabled = false;
+      }
+    }
+    async function contract() {
+      const signer = await provider().getSigner();
+      return new ethers.Contract(CONFIG.contractAddress, ABI, signer);
+    }
+    function cooldownLeft(paidAt, durationSeconds) {
+      if (!paidAt) return { blocked: false, label: "No earlier payment from this wallet." };
+      const nextAt = (paidAt + durationSeconds) * 1000;
+      const left = nextAt - Date.now();
+      if (left <= 0) return { blocked: false, label: "This wallet can buy another note now." };
+      const days = Math.floor(left / 86400000);
+      const hours = Math.floor((left % 86400000) / 3600000);
+      return {
+        blocked: true,
+        label: days + " day" + (days === 1 ? "" : "s") + " " + hours + " hour" + (hours === 1 ? "" : "s") + " until another note."
+      };
+    }
+    async function loadSale() {
+      const label = document.getElementById("price-label");
+      const quote = document.getElementById("note-quote");
+      const button = document.getElementById("pay-btn");
+      if (!contractReady()) {
+        label.textContent = "—";
+        quote.textContent = "Deploy MatrixNotes.sol, then set CONFIG.contractAddress.";
+        document.getElementById("cooldown").textContent = "—";
+        button.disabled = true;
+        return;
+      }
+      const c = await contract();
+      const price = await c.currentPrice();
+      const duration = await c.newNoteDuration();
+      const paused = await c.paused();
+      const purchase = await c.getPurchase(session.address);
+      const wait = cooldownLeft(Number(purchase.paidAt), Number(duration));
+      label.textContent = ethers.formatEther(price) + " ETH";
+      quote.textContent = paused
+        ? "Sales are paused by the author. Price is still currentPrice() on the contract."
+        : "Live price from currentPrice(). Wait is newNoteDuration() on the contract.";
+      document.getElementById("cooldown").textContent = wait.label;
+      button.disabled = paused || wait.blocked;
+    }
+    async function encryptionPublicKey() {
+      const key = await window.ethereum.request({
+        method: "eth_getEncryptionPublicKey",
+        params: [session.address]
+      });
+      if (!key) throw new Error("MetaMask did not return an encryption key.");
+      return key;
+    }
+    async function payForNote() {
+      if (!contractReady()) {
+        setStatus("pay-status", "Set CONFIG.contractAddress after you deploy.", "bad");
+        return;
+      }
+      const button = document.getElementById("pay-btn");
+      button.disabled = true;
+      try {
+        const c = await contract();
+        const purchase = await c.getPurchase(session.address);
+        const wait = cooldownLeft(Number(purchase.paidAt), Number(await c.newNoteDuration()));
+        if (wait.blocked) throw new Error(wait.label);
+        if (await c.paused()) throw new Error("Sales are paused.");
+        setStatus("pay-status", "Requesting the encryption public key…");
+        const key = await encryptionPublicKey();
+        const price = await c.currentPrice();
+        setStatus("pay-status", "Confirm " + ethers.formatEther(price) + " ETH in MetaMask.");
+        const tx = await c.buy(key, { value: price });
+        setStatus("pay-status", "Submitted " + tx.hash + ". Waiting for confirmation…");
+        await tx.wait();
+        setStatus("pay-status", "Paid. Only the contract author can encrypt the page to this wallet.", "ok");
+        await loadSale();
+        await refreshPurchase();
+      } catch (error) {
+        setStatus("pay-status", error.shortMessage || error.message || "Payment cancelled.", "bad");
+        await loadSale();
+      }
+    }
+    async function refreshPurchase() {
+      if (!contractReady()) return;
+      const c = await contract();
+      const p = await c.getPurchase(session.address);
+      session.ciphertext = p.ciphertext || "";
+      if (!p.paid) {
+        document.getElementById("note-state").textContent = "No payment from this wallet yet.";
+        return;
+      }
+      document.getElementById("note-state").textContent = p.delivered
+        ? "Delivered on-chain. Decrypt with this wallet."
+        : "Paid. Waiting for the author to deliver ciphertext.";
+      document.getElementById("note-out").textContent = p.delivered
+        ? session.ciphertext
+        : "Encrypted text appears here after delivery.";
+    }
+    async function decryptNote() {
+      if (!session.ciphertext) {
+        toast("No ciphertext on-chain for this wallet yet.");
+        return;
+      }
+      try {
+        const hex = ethers.hexlify(ethers.toUtf8Bytes(session.ciphertext));
+        const plain = await window.ethereum.request({
+          method: "eth_decrypt",
+          params: [hex, session.address]
+        });
+        document.getElementById("note-out").textContent = plain;
+        toast("Note decrypted");
+      } catch (error) {
+        toast(error.message || "Decrypt rejected.");
+      }
+    }
+    function keyBytes(value) {
+      if (value.startsWith("0x")) return ethers.getBytes(value);
+      return nacl.util.decodeBase64(value);
+    }
+    function encryptFor(recipientKey, message) {
+      const pub = keyBytes(recipientKey);
+      const ephemeral = nacl.box.keyPair();
+      const nonce = nacl.randomBytes(nacl.box.nonceLength);
+      const boxed = nacl.box(nacl.util.decodeUTF8(message), nonce, pub, ephemeral.secretKey);
+      if (!boxed) throw new Error("Encryption failed. The stored key is not an X25519 key.");
+      return JSON.stringify({
+        version: "x25519-xsalsa20-poly1305",
+        nonce: nacl.util.encodeBase64(nonce),
+        ephemPublicKey: nacl.util.encodeBase64(ephemeral.publicKey),
+        ciphertext: nacl.util.encodeBase64(boxed)
+      });
+    }
+    async function isAuthor() {
+      const c = await contract();
+      return (await c.author()).toLowerCase() === session.address.toLowerCase();
+    }
+    async function showAuthorIfNeeded() {
+      if (!contractReady()) return;
+      document.getElementById("author").classList.remove("on");
+      if (await isAuthor()) document.getElementById("author").classList.add("on");
+    }
+    async function updatePrice() {
+      if (!(await isAuthor())) {
+        setStatus("author-status", "Only the contract author can change the price.", "bad");
+        return;
+      }
+      try {
+        const wei = ethers.parseEther(document.getElementById("new-price").value.trim());
+        const c = await contract();
+        setStatus("author-status", "Confirm the new price in MetaMask…");
+        const tx = await c.setPrice(wei);
+        await tx.wait();
+        setStatus("author-status", "Price updated.", "ok");
+        await loadSale();
+      } catch (error) {
+        setStatus("author-status", error.shortMessage || error.message || "Price update failed.", "bad");
+      }
+    }
+    async function updateDuration() {
+      if (!(await isAuthor())) {
+        setStatus("author-status", "Only the contract author can change the wait.", "bad");
+        return;
+      }
+      const days = Number(document.getElementById("new-duration").value.trim());
+      if (!Number.isFinite(days) || days < 0) {
+        setStatus("author-status", "Enter a number of days.", "bad");
+        return;
+      }
+      try {
+        const c = await contract();
+        const tx = await c.setNewNoteDuration(BigInt(Math.round(days * 86400)));
+        setStatus("author-status", "Submitted " + tx.hash);
+        await tx.wait();
+        setStatus("author-status", "Wait is now " + days + " days.", "ok");
+        await loadSale();
+      } catch (error) {
+        setStatus("author-status", error.shortMessage || error.message || "Wait update failed.", "bad");
+      }
+    }
+    async function setPaused(shouldPause) {
+      if (!(await isAuthor())) {
+        setStatus("author-status", "Only the contract author can pause sales.", "bad");
+        return;
+      }
+      try {
+        const c = await contract();
+        const tx = shouldPause ? await c.pause() : await c.unpause();
+        await tx.wait();
+        setStatus("author-status", shouldPause ? "Sales paused." : "Sales unpaused.", "ok");
+        await loadSale();
+      } catch (error) {
+        setStatus("author-status", error.shortMessage || error.message || "Pause update failed.", "bad");
+      }
+    }
+    async function loadBuyers() {
+      const c = await contract();
+      const count = Number(await c.buyerCount());
+      const rows = [];
+      for (let i = 0; i < count; i++) {
+        const buyer = await c.buyerAt(i);
+        const p = await c.getPurchase(buyer);
+        rows.push(shortAddr(buyer) + (p.delivered ? " · delivered" : " · waiting"));
+      }
+      document.getElementById("buyer-list").textContent = rows.length ? rows.join("  ·  ") : "No buyers yet.";
+    }
+    async function deliverNote() {
+      const buyer = document.getElementById("buyer-address").value.trim();
+      const plain = document.getElementById("plain-note").value.trim();
+      if (!(await isAuthor())) {
+        setStatus("author-status", "Only the contract author can deliver.", "bad");
+        document.getElementById("author").classList.remove("on");
+        return;
+      }
+      if (!ethers.isAddress(buyer) || !plain) {
+        setStatus("author-status", "Need a buyer address and the report text.", "bad");
+        return;
+      }
+      try {
+        const c = await contract();
+        const p = await c.getPurchase(buyer);
+        if (!p.paid) throw new Error("That wallet has not paid.");
+        const payload = encryptFor(p.encryptionPubKey, plain);
+        const tx = await c.deliver(buyer, payload);
+        setStatus("author-status", "Submitted " + tx.hash);
+        await tx.wait();
+        setStatus("author-status", "Ciphertext is on-chain for " + shortAddr(buyer) + ".", "ok");
+      } catch (error) {
+        setStatus("author-status", error.shortMessage || error.message || "Delivery failed.", "bad");
+      }
+    }
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", () => window.location.reload());
+    }
+  </script>
+</body>
+</html>
